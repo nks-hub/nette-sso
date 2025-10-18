@@ -1,0 +1,45 @@
+{
+  "name": "nks-hub/nette-sso",
+  "description": "Nette extension for SSO authentication via OAuth2/OpenID Connect (Authentik)",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "nette",
+    "sso",
+    "oauth2",
+    "openid-connect",
+    "authentik",
+    "authentication"
+  ],
+  "authors": [
+    {
+      "name": "NKS Hub",
+      "email": "dev@nks-hub.cz"
+    }
+  ],
+  "require": {
+    "php": ">=8.1 <8.5",
+    "nette/di": "^3.0",
+    "nette/security": "^3.0",
+    "nette/http": "^3.0",
+    "nette/utils": "^3.0 || ^4.0",
+    "nette/schema": "^1.2",
+    "league/oauth2-client": "^2.7"
+  },
+  "require-dev": {
+    "nette/tester": "^2.5",
+    "phpstan/phpstan": "^1.10"
+  },
+  "autoload": {
+    "psr-4": {
+      "NksHub\\NetteSso\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "NksHub\\NetteSso\\Tests\\": "tests/"
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
