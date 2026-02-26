@@ -1,3 +1,8 @@
+[![Latest Stable Version](https://poser.pugx.org/nks-hub/nette-sso/v)](https://packagist.org/packages/nks-hub/nette-sso)
+[![Total Downloads](https://poser.pugx.org/nks-hub/nette-sso/downloads)](https://packagist.org/packages/nks-hub/nette-sso)
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D8.1-8892BF.svg)](https://php.net/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 # NKS Hub - Nette SSO Extension
 
 Nette DI extension for Single Sign-On authentication via OAuth2/OpenID Connect (Authentik).
@@ -384,35 +389,27 @@ composer test
 composer phpstan
 ```
 
-## License
+## Contributing
 
-MIT License
+Contributions are welcome! For major changes, please open an issue first.
 
-Copyright (c) 2025 NKS Hub
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: description'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## Support
 
-- **Issues:** https://github.com/nks-hub/nette-sso/issues
-- **Email:** dev@nks-hub.cz
+- 📧 **Email:** dev@nks-hub.cz
+- 🐛 **Bug reports:** [GitHub Issues](https://github.com/nks-hub/nette-sso/issues)
 
-## Credits
+## License
 
-Developed by [NKS Hub](https://nks-hub.cz)
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/nks-hub">NKS Hub</a>
+</p>
