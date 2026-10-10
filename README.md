@@ -6,18 +6,18 @@
 [![Nette Version](https://img.shields.io/badge/nette-%5E3.0-blue.svg)](https://nette.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Nette DI extension for Single Sign-On authentication via OAuth2/OpenID Connect (Authentik).
+Nette DI extension that logs users in through an OAuth2/OpenID Connect provider (built against Authentik) and turns the userinfo response into a Nette identity.
 
 ## Features
 
 - 🔐 **OAuth2/OpenID Connect** - Authentication flow with PKCE (S256) and nonce validation
-- 🛡️ **CSRF protection** - State token validation
+- 🛡️ **CSRF protection** - State parameter compared with the session copy using `hash_equals()`
 - 🎭 **Role mapping** - OAuth2 groups mapped to Nette roles
-- 👮 **Admin access control** - Based on configurable groups
-- 🎯 **Nette Security integration** - Creates `SimpleIdentity`
-- 💾 **Session-based state management** - For secure authentication
+- 👮 **Admin access control** - `hasAdminAccess()` checks the user's groups against `adminGroups`
+- 🎯 **Nette Security integration** - `createIdentity()` builds a `SimpleIdentity` from userinfo data
+- 💾 **Session storage** - State, PKCE verifier and nonce kept in the `sso` session section and cleared after the callback
 - 🐘 **PHP 8.1+ support** - 8.1, 8.2, 8.3, 8.4
-- ✅ **Type-safe** - Strict types and comprehensive PHPDoc
+- ✅ **Strict types** - `declare(strict_types=1)` in every source file
 
 ## Requirements
 
@@ -51,7 +51,7 @@ sso:
     adminGroups: ['admin', 'superadmin', 'moderator']  # optional
 ```
 
-### Configuration Parameters
+### Configuration parameters
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
@@ -71,9 +71,9 @@ sso:
 - `superadmin-webs`
 - `authentik admins`
 
-### Environment Variables
+### Environment variables
 
-It's recommended to use environment variables for sensitive data:
+Secrets can be read from environment variables:
 
 ```neon
 sso:
@@ -87,7 +87,7 @@ sso:
 
 ## Usage
 
-### Basic Authentication Flow
+### Basic authentication flow
 
 Create an authentication presenter:
 
@@ -170,9 +170,9 @@ final class AuthPresenter extends Presenter
 }
 ```
 
-### Custom Role Mapping
+### Custom role mapping
 
-If you want to override role detection (e.g., from database):
+To take the role from your own database instead of the groups:
 
 ```php
 // Get user from database
@@ -185,7 +185,7 @@ $identity = $this->ssoProvider->createIdentity(
 );
 ```
 
-### Checking Admin Access
+### Checking admin access
 
 ```php
 $userData = $result['user'];
@@ -195,14 +195,14 @@ if ($this->ssoProvider->hasAdminAccess($userData)) {
 }
 ```
 
-### Getting Configured Admin Groups
+### Getting configured admin groups
 
 ```php
 $adminGroups = $this->ssoProvider->getAdminGroups();
 // Returns: ['admin', 'superadmin', 'moderator', ...]
 ```
 
-## OAuth2 Flow Diagram
+## OAuth2 flow diagram
 
 ```
 ┌─────────┐                ┌──────────┐                ┌─────────┐
@@ -257,18 +257,18 @@ $adminGroups = $this->ssoProvider->getAdminGroups();
      │                          │                           │
 ```
 
-## Security Considerations
+## Security considerations
 
-### CSRF Protection
+### CSRF protection
 
-The extension automatically handles CSRF protection using OAuth2 state tokens:
+The extension checks the OAuth2 state parameter:
 
 1. When generating the authorization URL, a random state token is created
 2. The state token is stored in the user's session
 3. After OAuth2 callback, the state parameter is validated against the session
 4. If validation fails, `AuthenticationFailedException` is thrown
 
-### State Token Validation
+### State token validation
 
 ```php
 try {
@@ -279,13 +279,12 @@ try {
 }
 ```
 
-### Secure Configuration
+### Configuration checklist
 
 **DO:**
 - ✅ Store secrets in environment variables
 - ✅ Use HTTPS for redirect URIs
 - ✅ Validate user groups before granting access
-- ✅ Implement proper error handling
 
 **DON'T:**
 - ❌ Commit secrets to version control
@@ -293,18 +292,18 @@ try {
 - ❌ Trust OAuth2 data without validation
 - ❌ Expose detailed error messages to users
 
-## Role Mapping
+## Role mapping
 
-The extension automatically maps OAuth2 groups to Nette roles with the following priority:
+OAuth2 groups map to Nette roles in this priority order:
 
 1. **Superadmin** - Groups: `superadmin`, `superadmin-webs`
 2. **Admin** - Groups: `admin`, `administrators`, `authentik admins`
 3. **Moderator** - Groups: `moderator`
 4. **Viewer** - Default fallback role
 
-### Custom Role Mapping
+### Custom role
 
-Override role detection by passing a custom role:
+Pass the role as the second argument of `createIdentity()`:
 
 ```php
 // From database
@@ -313,7 +312,7 @@ $dbRole = $userRepository->getRoleForSsoId($userData['sub']);
 $identity = $this->ssoProvider->createIdentity($userData, $dbRole);
 ```
 
-## Identity Structure
+## Identity structure
 
 The created `Nette\Security\SimpleIdentity` contains:
 
@@ -370,7 +369,7 @@ echo $identity->getData()['groups'];        // ['admin', 'users']
 
 ### Users without admin groups can't access admin area
 
-**Expected behavior.** Only users with groups listed in `adminGroups` configuration can access admin area.
+This is intended: only users in a group listed in `adminGroups` pass `hasAdminAccess()`.
 
 **Solutions:**
 - Add user to admin group in SSO provider (Authentik)
