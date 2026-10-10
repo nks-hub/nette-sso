@@ -1,22 +1,23 @@
+# Nette SSO
+
 [![Latest Stable Version](https://poser.pugx.org/nks-hub/nette-sso/v)](https://packagist.org/packages/nks-hub/nette-sso)
 [![Total Downloads](https://poser.pugx.org/nks-hub/nette-sso/downloads)](https://packagist.org/packages/nks-hub/nette-sso)
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D8.1-8892BF.svg)](https://php.net/)
+[![Nette Version](https://img.shields.io/badge/nette-%5E3.0-blue.svg)](https://nette.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-
-# NKS Hub - Nette SSO Extension
 
 Nette DI extension for Single Sign-On authentication via OAuth2/OpenID Connect (Authentik).
 
 ## Features
 
-- ✅ **OAuth2/OpenID Connect** authentication flow
-- ✅ **CSRF protection** with state token validation
-- ✅ **Role mapping** from OAuth2 groups to Nette roles
-- ✅ **Admin access control** based on configurable groups
-- ✅ **Nette Security integration** with SimpleIdentity
-- ✅ **Session-based state management** for secure authentication
-- ✅ **PHP 8.1+ support** (8.1, 8.2, 8.3, 8.4)
-- ✅ **Type-safe** with strict types and comprehensive PHPDoc
+- 🔐 **OAuth2/OpenID Connect** - Authentication flow with PKCE (S256) and nonce validation
+- 🛡️ **CSRF protection** - State token validation
+- 🎭 **Role mapping** - OAuth2 groups mapped to Nette roles
+- 👮 **Admin access control** - Based on configurable groups
+- 🎯 **Nette Security integration** - Creates `SimpleIdentity`
+- 💾 **Session-based state management** - For secure authentication
+- 🐘 **PHP 8.1+ support** - 8.1, 8.2, 8.3, 8.4
+- ✅ **Type-safe** - Strict types and comprehensive PHPDoc
 
 ## Requirements
 
@@ -44,9 +45,9 @@ sso:
     clientId: 'your-client-id'
     clientSecret: 'your-client-secret'
     redirectUri: 'https://your-domain.com/auth/callback'
-    authorizeUrl: 'https://sso.nks-hub.cz/application/o/authorize/'
-    tokenUrl: 'https://sso.nks-hub.cz/application/o/token/'
-    userinfoUrl: 'https://sso.nks-hub.cz/application/o/userinfo/'
+    authorizeUrl: 'https://sso.example.com/application/o/authorize/'
+    tokenUrl: 'https://sso.example.com/application/o/token/'
+    userinfoUrl: 'https://sso.example.com/application/o/userinfo/'
     adminGroups: ['admin', 'superadmin', 'moderator']  # optional
 ```
 
@@ -127,7 +128,7 @@ final class AuthPresenter extends Presenter
         $state = $this->getParameter('state');
 
         if (!$code || !$state) {
-            $this->flashMessage('Chybný požadavek na přihlášení', 'error');
+            $this->flashMessage('Invalid login request', 'error');
             $this->redirect('Homepage:');
         }
 
@@ -138,7 +139,7 @@ final class AuthPresenter extends Presenter
 
             // Check admin access
             if (!$this->ssoProvider->hasAdminAccess($userData)) {
-                $this->flashMessage('Nemáte oprávnění k přístupu do administrace', 'error');
+                $this->flashMessage('You are not allowed to access the administration', 'error');
                 $this->redirect('Homepage:');
             }
 
@@ -148,11 +149,11 @@ final class AuthPresenter extends Presenter
             // Log user in
             $this->getUser()->login($identity);
 
-            $this->flashMessage('Úspěšně přihlášen jako ' . $identity->getData()['name'], 'success');
+            $this->flashMessage('Logged in as ' . $identity->getData()['name'], 'success');
             $this->redirect('Admin:Dashboard:');
 
         } catch (AuthenticationFailedException $e) {
-            $this->flashMessage('Přihlášení selhalo: ' . $e->getMessage(), 'error');
+            $this->flashMessage('Login failed: ' . $e->getMessage(), 'error');
             $this->redirect('Homepage:');
         }
     }
@@ -163,7 +164,7 @@ final class AuthPresenter extends Presenter
     public function actionLogout(): void
     {
         $this->getUser()->logout(true);
-        $this->flashMessage('Odhlášen', 'info');
+        $this->flashMessage('Logged out', 'info');
         $this->redirect('Homepage:');
     }
 }
@@ -376,17 +377,14 @@ echo $identity->getData()['groups'];        // ['admin', 'users']
 - Add user's group to `adminGroups` configuration
 - Implement custom role mapping from database
 
-## Testing
+## Development
 
 ```bash
 # Install dependencies
 composer install
 
-# Run tests
-composer test
-
 # Run static analysis
-composer phpstan
+vendor/bin/phpstan analyse src
 ```
 
 ## Contributing
