@@ -23,10 +23,13 @@ use NksHub\NetteSso\OAuth2\SsoProvider;
  *     clientId: 'your-client-id'
  *     clientSecret: 'your-client-secret'
  *     redirectUri: 'https://your-domain.com/auth/callback'
- *     authorizeUrl: 'https://sso.nks-hub.cz/application/o/authorize/'
- *     tokenUrl: 'https://sso.nks-hub.cz/application/o/token/'
- *     userinfoUrl: 'https://sso.nks-hub.cz/application/o/userinfo/'
+ *     authorizeUrl: 'https://sso.example.com/application/o/authorize/'
+ *     tokenUrl: 'https://sso.example.com/application/o/token/'
+ *     userinfoUrl: 'https://sso.example.com/application/o/userinfo/'
  *     adminGroups: ['admin', 'superadmin', 'moderator']
+ *     roleGroups:
+ *         superadmin: ['superadmin']
+ *         admin: ['admin', 'administrators']
  * </code>
  */
 class SsoExtension extends CompilerExtension
@@ -66,6 +69,10 @@ class SsoExtension extends CompilerExtension
 				'superadmin-webs',
 				'authentik admins'
 			]),
+
+			'roleGroups' => Expect::arrayOf(Expect::listOf('string'), 'string')
+				->default(SsoProvider::DEFAULT_ROLE_GROUPS)
+				->mergeDefaults(false),
 		]);
 	}
 
@@ -84,6 +91,7 @@ class SsoExtension extends CompilerExtension
 				'tokenUrl' => $config->tokenUrl,
 				'userinfoUrl' => $config->userinfoUrl,
 				'adminGroups' => $config->adminGroups,
+				'roleGroups' => $config->roleGroups,
 			])
 			->setAutowired(true);
 	}

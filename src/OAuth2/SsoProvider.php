@@ -20,11 +20,21 @@ use NksHub\NetteSso\Exceptions\AuthenticationFailedException;
  */
 class SsoProvider
 {
+	/**
+	 * Default mapping of Nette roles to OAuth2 groups, in priority order (first match wins).
+	 */
+	public const DEFAULT_ROLE_GROUPS = [
+		'superadmin' => ['superadmin', 'superadmin-webs'],
+		'admin' => ['admin', 'administrators', 'authentik admins'],
+		'moderator' => ['moderator'],
+	];
+
 	private GenericProvider $provider;
 	private SessionSection $session;
 
 	/**
 	 * @param string[] $adminGroups List of groups that grant admin access
+	 * @param array<string, string[]> $roleGroups Nette role => groups that grant it, in priority order
 	 */
 	public function __construct(
 		private readonly string $clientId,
@@ -35,6 +45,7 @@ class SsoProvider
 		private readonly string $userinfoUrl,
 		private readonly array $adminGroups,
 		Session $sessionManager,
+		private readonly array $roleGroups = self::DEFAULT_ROLE_GROUPS,
 	) {
 		$this->initializeProvider();
 		$this->session = $sessionManager->getSection('sso');
@@ -204,7 +215,7 @@ class SsoProvider
 
 		// Validate nonce from ID token to prevent replay attacks
 		if ($expectedNonce !== null) {
-			$this->validateNonce($user, $expectedNonce);
+			$this->validateNonce($token, $expectedNonce);
 		}
 
 		return [
@@ -214,16 +225,22 @@ class SsoProvider
 	}
 
 	/**
-	 * Validate nonce claim in ID token / userinfo response
+	 * Validate the nonce claim of the ID token returned by the token endpoint.
 	 *
-	 * @param array<string, mixed> $userData
-	 * @throws AuthenticationFailedException When nonce is missing or does not match
+	 * The token comes straight from the token endpoint over TLS, so its signature is not
+	 * checked (OIDC Core 3.1.3.7); only the nonce claim is compared.
+	 *
+	 * @throws AuthenticationFailedException When the ID token or its nonce is missing or does not match
 	 */
-	private function validateNonce(array $userData, string $expectedNonce): void
+	private function validateNonce(AccessToken $token, string $expectedNonce): void
 	{
-		$receivedNonce = $userData['nonce'] ?? null;
+		$idToken = $token->getValues()['id_token'] ?? null;
+		$parts = is_string($idToken) ? explode('.', $idToken) : [];
+		$payload = count($parts) === 3 ? base64_decode(strtr($parts[1], '-_', '+/'), true) : false;
+		$claims = $payload !== false ? json_decode($payload, true) : null;
+		$receivedNonce = is_array($claims) ? ($claims['nonce'] ?? null) : null;
 
-		if ($receivedNonce === null || !hash_equals($expectedNonce, (string) $receivedNonce)) {
+		if (!is_string($receivedNonce) || !hash_equals($expectedNonce, $receivedNonce)) {
 			throw new AuthenticationFailedException('Invalid nonce (ID token replay attack detected)');
 		}
 	}
@@ -287,17 +304,12 @@ class SsoProvider
 	{
 		$groupsLower = array_map('strtolower', $groups);
 
-		// Priority: superadmin > admin > moderator > viewer
-		if (in_array('superadmin', $groupsLower, true) || in_array('superadmin-webs', $groupsLower, true)) {
-			return 'superadmin';
-		}
-
-		if (in_array('admin', $groupsLower, true) || in_array('administrators', $groupsLower, true) || in_array('authentik admins', $groupsLower, true)) {
-			return 'admin';
-		}
-
-		if (in_array('moderator', $groupsLower, true)) {
-			return 'moderator';
+		foreach ($this->roleGroups as $role => $roleGroupNames) {
+			foreach ($roleGroupNames as $name) {
+				if (in_array(strtolower($name), $groupsLower, true)) {
+					return (string) $role;
+				}
+			}
 		}
 
 		return 'viewer';
