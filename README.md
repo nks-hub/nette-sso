@@ -10,7 +10,7 @@ Nette DI extension that logs users in through an OAuth2/OpenID Connect provider 
 
 ## Features
 
-- 🔐 **OAuth2/OpenID Connect** - Authentication flow with PKCE (S256) and nonce validation
+- 🔐 **OAuth2/OpenID Connect** - Authentication flow with PKCE (S256) and a nonce checked against the ID token
 - 🛡️ **CSRF protection** - State parameter compared with the session copy using `hash_equals()`
 - 🎭 **Role mapping** - OAuth2 groups mapped to Nette roles
 - 👮 **Admin access control** - `hasAdminAccess()` checks the user's groups against `adminGroups`
@@ -49,6 +49,9 @@ sso:
     tokenUrl: 'https://sso.example.com/application/o/token/'
     userinfoUrl: 'https://sso.example.com/application/o/userinfo/'
     adminGroups: ['admin', 'superadmin', 'moderator']  # optional
+    roleGroups:                                        # optional
+        superadmin: ['superadmin']
+        admin: ['admin', 'administrators']
 ```
 
 ### Configuration parameters
@@ -62,6 +65,7 @@ sso:
 | `tokenUrl` | ✅ Yes | string | OAuth2 token endpoint URL |
 | `userinfoUrl` | ✅ Yes | string | OAuth2 user info endpoint URL |
 | `adminGroups` | ❌ No | string[] | List of groups that grant admin access (default: see below) |
+| `roleGroups` | ❌ No | map of role => string[] | Groups that give each Nette role, in priority order (default: see [Role mapping](#role-mapping)) |
 
 **Default admin groups:**
 - `admin`
@@ -279,6 +283,10 @@ try {
 }
 ```
 
+### Nonce and ID token
+
+The nonce is compared with the `nonce` claim of the `id_token` from the token endpoint response (your provider must return one, so request the `openid` scope). The signature of the ID token is not verified: the token arrives directly from the token endpoint over TLS and only the nonce claim is read.
+
 ### Configuration checklist
 
 **DO:**
@@ -294,12 +302,21 @@ try {
 
 ## Role mapping
 
-OAuth2 groups map to Nette roles in this priority order:
+`createIdentity()` takes the role from the `roleGroups` setting. The first role in the list that has a matching group wins, group names are compared case-insensitively, and a user with no match gets `viewer`. `adminGroups` is separate and only drives `hasAdminAccess()`.
 
-1. **Superadmin** - Groups: `superadmin`, `superadmin-webs`
-2. **Admin** - Groups: `admin`, `administrators`, `authentik admins`
-3. **Moderator** - Groups: `moderator`
-4. **Viewer** - Default fallback role
+Default `roleGroups`:
+
+1. **superadmin** - Groups: `superadmin`, `superadmin-webs`
+2. **admin** - Groups: `admin`, `administrators`, `authentik admins`
+3. **moderator** - Groups: `moderator`
+4. **viewer** - Fallback when no group matches
+
+```neon
+sso:
+    roleGroups:
+        owner: ['sso-owners']
+        editor: ['sso-editors', 'sso-writers']
+```
 
 ### Custom role
 
@@ -381,6 +398,9 @@ This is intended: only users in a group listed in `adminGroups` pass `hasAdminAc
 ```bash
 # Install dependencies
 composer install
+
+# Run tests
+vendor/bin/tester tests
 
 # Run static analysis
 vendor/bin/phpstan analyse src
